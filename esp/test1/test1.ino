@@ -8,8 +8,7 @@
 // Load Wi-Fi library
 #include <ESP8266WiFi.h>
 
-#define BUTTON_SLEEP_TIMOUT 15000
-#define MOTION_OFF_TIMEOUT 1000
+#define BUTTON_MOTION_SLEEP_TIMOUT 15000
 #define DEPOUNCE_TIME 150
 
 
@@ -41,7 +40,7 @@ unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
-int motionCounter=0, buttonSleepCounter=0, last_push=0, new_push=0;
+int last_motion=0, last_push=0, new_push=0;
 
 ICACHE_RAM_ATTR void buttonInterruptHandler(){
   new_push=millis();
@@ -58,9 +57,18 @@ ICACHE_RAM_ATTR void buttonInterruptHandler(){
       digitalWrite(output5, HIGH);
       digitalWrite(output4, HIGH);
     }
-    buttonSleepCounter=BUTTON_SLEEP_TIMOUT;
+    last_motion=millis();
   }
   last_push=new_push;
+}
+
+ICACHE_RAM_ATTR void motionSensorInterruptHandler(){
+  if((millis()-last_push)>BUTTON_MOTION_SLEEP_TIMOUT){
+    output5State = "on";
+    output4State = "on";
+    digitalWrite(output5, LOW);
+    digitalWrite(output4, LOW);
+  }
 }
 
 void setup() {
@@ -68,11 +76,14 @@ void setup() {
   Serial.begin(115200);
   pinMode(output5, OUTPUT);
   pinMode(output4, OUTPUT);
-  pinMode(motion, INPUT);
 
   // Setup button interrupt
   pinMode(button, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(button), buttonInterruptHandler, FALLING);
+
+  // Setup motion interrupt
+  pinMode(motion, INPUT);
+  attachInterrupt(digitalPinToInterrupt(motion), motionSensorInterruptHandler, RISING);
   
   // Set outputs to LOW
   digitalWrite(output5, LOW);
@@ -97,25 +108,6 @@ void setup() {
 }
 void loop(){
   WiFiClient client = server.available();   // Listen for incoming clients
-
-
-   if(buttonSleepCounter<=0){
-   if(digitalRead(motion)&&output5State == "off"&&output4State == "off"){
-    if(motionCounter<=0){
-    output5State = "on";
-    output4State = "on";
-    digitalWrite(output5, LOW);
-    digitalWrite(output4, LOW);
-    }
-    else{
-      motionCounter--;
-      delay(1);
-    }
-   }
-   }else{
-    buttonSleepCounter-=1;
-    delay(1);
-   }
    //Serial.println(digitalRead(motion ));
    //Serial.println(digitalRead(button));
    
@@ -158,7 +150,7 @@ void loop(){
               output5State = "off";
               digitalWrite(output4, !LOW);
               digitalWrite(output5, !LOW);
-              motionCounter=MOTION_OFF_TIMEOUT;
+              last_motion=millis();
               changed=true;
             }else if (header.indexOf("GET /5/on") >= 0) {
               //Serial.println("GPIO 5 on");
