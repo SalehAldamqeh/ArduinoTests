@@ -63,7 +63,7 @@ ICACHE_RAM_ATTR void buttonInterruptHandler(){
 }
 
 ICACHE_RAM_ATTR void motionSensorInterruptHandler(){
-  if((millis()-last_motion)>BUTTON_MOTION_SLEEP_TIMOUT){
+  if((millis()-last_motion)>BUTTON_MOTION_SLEEP_TIMOUT && output5State=="off" && output4State=="off"){
     output5State = "on";
     output4State = "on";
     digitalWrite(output5, LOW);
