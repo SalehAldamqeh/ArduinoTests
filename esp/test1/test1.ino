@@ -137,6 +137,7 @@ void loop(){
             
             // turns the GPIOs on and off
             bool changed=false;
+            last_motion=millis();
             if (header.indexOf("GET /5&4/on") >= 0) {
               //Serial.println("GPIO 5&4 on");
               output4State = "on";
@@ -150,7 +151,6 @@ void loop(){
               output5State = "off";
               digitalWrite(output4, !LOW);
               digitalWrite(output5, !LOW);
-              last_motion=millis();
               changed=true;
             }else if (header.indexOf("GET /5/on") >= 0) {
               //Serial.println("GPIO 5 on");
