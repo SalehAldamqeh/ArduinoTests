@@ -69,6 +69,7 @@ ICACHE_RAM_ATTR void motionSensorInterruptHandler(){
     digitalWrite(output5, LOW);
     digitalWrite(output4, LOW);
   }
+  last_motion=millis();
 }
 
 void setup() {
